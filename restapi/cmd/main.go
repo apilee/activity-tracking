@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apilee/activity-tracking/restapi"
 	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 	"io/ioutil"
@@ -11,55 +12,6 @@ import (
 	"os"
 	"time"
 )
-
-// Acceleration Data
-type acceleration struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
-	Z float64 `json:"z"`
-}
-type orientation struct {
-	Azimuth float64 `json:"azimuth"`
-	Pitch   float64 `json:"pitch"`
-	Roll    float64 `json:"roll"`
-}
-type gyro struct {
-	Roll  float64 `json:"roll"`
-	Pitch float64 `json:"pitch"`
-	Yaw   float64 `json:"yaw"`
-}
-
-// Metadata for training acceleration.
-type accelOrientTraining struct {
-	UserId       string       `json:"userID"`
-	Timestamp    int64        `json:"timestamp"`
-	Activity     string       `json:"activity"`
-	StartTime    int64        `json:"starttime"`
-	Acceleration acceleration `json:"acceleration"`
-	Orientation  orientation  `json:"orientation"`
-}
-
-// Metadata for production acceleration.
-type accelOrientProduction struct {
-	UserId       string       `json:"userID"`
-	Timestamp    int64        `json:"timestamp"`
-	Acceleration acceleration `json:"acceleration"`
-	Orientation  orientation  `json:"orientation"`
-}
-
-type gyroTraining struct {
-	UserId    string `json:"userID"`
-	Timestamp int64  `json:"timestamp"`
-	Activity  string `json:"activity"`
-	StartTime int64  `json:"starttime"`
-	Gyro      gyro   `json:"gyro"`
-}
-
-type gyroProduction struct {
-	UserId    string `json:"userID"`
-	Timestamp int64  `json:"timestamp"`
-	Gyro      gyro   `json:"gyro"`
-}
 
 var session *gocql.Session
 
@@ -79,7 +31,6 @@ func main() {
 	}
 	cluster.Timeout = time.Second * 4
 	cluster.ProtoVersion = 4
-	//var err error
 	session, err = cluster.CreateSession()
 	for err != nil {
 		fmt.Println("Error when connecting for keyspace creation. Trying again in 2 seconds.")
@@ -218,11 +169,9 @@ func initOrientationProductionTable() error {
 	return nil
 }
 
-
-
 func handleAccelOrientProduction(w http.ResponseWriter, r *http.Request) {
 	// Read and parse request data.
-	myData := &accelOrientProduction{}
+	myData := &restapi.AccelOrientProduction{}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println(err)
@@ -271,7 +220,7 @@ func handleAccelOrientProduction(w http.ResponseWriter, r *http.Request) {
 
 func handleAccelOrientTraining(w http.ResponseWriter, r *http.Request) {
 	// Read and parse request data.
-	myData := &accelOrientTraining{}
+	myData := &restapi.AccelOrientTraining{}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println(err)
@@ -286,7 +235,7 @@ func handleAccelOrientTraining(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert data into Cassandra.
-		err = session.Query(`INSERT INTO trainingAcceleration (userid, activity, starttime, time, x, y, z) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+	err = session.Query(`INSERT INTO trainingAcceleration (userid, activity, starttime, time, x, y, z) VALUES (?, ?, ?, ?, ?, ?, ?);`,
 		myData.UserId,
 		myData.Activity,
 		myData.StartTime,
@@ -324,7 +273,7 @@ func handleAccelOrientTraining(w http.ResponseWriter, r *http.Request) {
 
 func handleGyroProduction(w http.ResponseWriter, r *http.Request) {
 	// Read and parse request data.
-	myData := &gyroProduction{}
+	myData := &restapi.GyroProduction{}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println(err)
@@ -358,7 +307,7 @@ func handleGyroProduction(w http.ResponseWriter, r *http.Request) {
 
 func handleGyroTraining(w http.ResponseWriter, r *http.Request) {
 	// Read and parse request data.
-	myData := &gyroTraining{}
+	myData := &restapi.GyroTraining{}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println(err)
