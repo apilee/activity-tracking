@@ -104,6 +104,7 @@ func main() {
 	m.HandleFunc("/training/accelorient", handleAccelOrientTraining)
 	m.HandleFunc("/production/gyro", handleGyroProduction)
 	m.HandleFunc("/training/gyro", handleGyroTraining)
+	m.HandleFunc("/healthcheck", handleHealthcheck)
 	http.ListenAndServe(":3000", m)
 }
 
@@ -339,4 +340,8 @@ func handleGyroTraining(w http.ResponseWriter, r *http.Request) {
 	}
 	// Android app expects the Status Created code for responses signaling success.
 	w.WriteHeader(http.StatusCreated)
+}
+
+func handleHealthcheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
