@@ -16,6 +16,7 @@ Install java and sbt.  Download spark 1.6.1 and unpack it.
 
 Build:
 
+    cd activity-tracking/sparkApp
     sbt assembly
   
 Start spark
