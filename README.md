@@ -10,6 +10,28 @@ It exposes the 9042 cassandra port and the 3000 server port.
 
 *docker-compose down* to clean up.
 
+## Setting up spark application
+
+Install java and sbt.  Download spark 1.6.1 and unpack it.
+
+Build:
+
+    sbt assembly
+  
+Start spark
+
+    cd [spark unpacked directory]
+    ./sbin/start-master.sh
+    (look at http://localhost:8080 for spark://[SPARK_HOST:SPARK_PORT] address)
+    ./sbin/start-slave.sh spark://[SPARK_HOST:SPARK_PORT] --cores 2 --memory 1g
+  
+Submit our application to spark for execution:
+
+    cd activity-tracking/sparkApp
+    spark-submit --master "spark://[SPARK_HOST:SPARK_PORT]" --class activity.Main "[GITHUB_CLONE_DIR]/activity-tracking/sparkApp/target/scala-2.10/spark-activity-tracking-assembly-1.0.jar" [CASSANDRA_IP]
+  
+(where CASSANDRA_IP for cassandra from docker-compose can be obtained by "ifconfig docker0" on linux)
+
 # Backing up/ Restoring cassandra
 
 ## Backing up
