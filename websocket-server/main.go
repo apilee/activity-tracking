@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/garyburd/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"net/http"
@@ -50,7 +51,14 @@ func main() {
 		for {
 			select {
 			case <-sendTicker.C:
-				err := conn.WriteMessage(websocket.TextMessage, []byte(getActivity(params["user"])))
+				activity, err := getActivity(params["user"])
+				if err != nil {
+					fmt.Println("Something went wrong: %s", err)
+					conn.WriteMessage(websocket.TextMessage, []byte("Error"))
+					break
+				}
+
+				err = conn.WriteMessage(websocket.TextMessage, []byte(activity))
 				if err != nil {
 					continueChan <- false
 					fmt.Println(err)
@@ -81,8 +89,16 @@ func main() {
 	http.ListenAndServe(":3001", m)
 }
 
-func initDatabaseAccessFunction() func(user string) string {
-	return func(user string) string {
-		return "running"
+func initDatabaseAccessFunction() func(user string) (string, error) {
+	c, err := redis.Dial("tcp", "redis:6379")
+	for err != nil {
+		fmt.Println("Error when connecting to the Redis DB. Trying again after 2 seconds. Error: %s", err)
+		err = nil
+		c, err = redis.Dial("tcp", "redis:6379")
+		time.Sleep(time.Second * 2)
+	}
+
+	return func(user string) (string, error) {
+		return redis.String(c.Do("GET", user))
 	}
 }
