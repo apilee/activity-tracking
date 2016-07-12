@@ -13,16 +13,16 @@ object Main {
     //moving from RDD to Scala Seq, because it's easier to process and we don't have lots of data currently
     val measurements = rawRdd.collect().map(measurementType.apply)
 
-    writer.println(s"${measurementType.name} rowcount: ${measurements.length}")
+    writer.println(s"\n${measurementType.name} rowcount: ${measurements.length}")
 
     val groups = measurements.groupBy(a => a.key).map {
       case (key, rows) =>
         MeasurementGroup(key, rows.toSeq.map(r => r.cell).sortBy(_.time))
     }.toSeq
 
-    writer.println(s"${measurementType.name} groups count: ${groups.length}")
+    writer.println(s"\n${measurementType.name} groups count: ${groups.length}")
     groups.map(_.stats).foreach { group =>
-      writer.println(s"${measurementType.name} group: ${group._1} ${group._2.prettyPrint}")
+      writer.println(s"\n${measurementType.name} group: ${group._1.prettyPrint} ${group._2.prettyPrint}")
     }
   }
 

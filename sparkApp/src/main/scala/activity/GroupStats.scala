@@ -10,11 +10,27 @@ case class SingleVarStats[A](min: A, mean: A, max: A) {
   def prettyPrint: String = s"min $min mean $mean max $max"
 }
 
+case class DimStats(varStats: SingleVarStats[Double], meanCrossingsCount: Int, meanCrossingsPercent: Double) {
+  def prettyPrint: String = s"${varStats.prettyPrint} crossings: $meanCrossingsCount crossings%: $meanCrossingsPercent"
+}
+
+object DimStats {
+  def apply(varStats: SingleVarStats[Double], measuredVars: Seq[Double]): DimStats =
+  if(measuredVars.isEmpty) DimStats(varStats, 0, 0d)
+  else {
+    val (crossingsCount, _) = measuredVars.foldLeft((0, measuredVars.head)) { (acc, v) =>
+      val (count, prev) = acc
+      if(Math.signum(v - varStats.mean) != Math.signum(prev - varStats.mean)) (count + 1, v) else (count, v)
+    }
+    DimStats(varStats, crossingsCount, crossingsCount.toDouble / measuredVars.length)
+  }
+}
+
 case class GroupStats(
                        length: Int,
-                       x: SingleVarStats[Double],
-                       y: SingleVarStats[Double],
-                       z: SingleVarStats[Double],
+                       x: DimStats,
+                       y: DimStats,
+                       z: DimStats,
                        intervals: SingleVarStats[IntervalWithTrackingOption],
                        durationMs: Long
                      ) {
@@ -36,9 +52,9 @@ object GroupStats {
     val zs = cells.map(_.z)
     val ts = cells.init.zip(cells.tail).map { case (prev, next) => IntervalWithTrackingOption(next.time - prev.time, Some(new DateTime(prev.time))) }
     GroupStats(ln,
-      SingleVarStats(xs.min, xs.sum / ln, xs.max),
-      SingleVarStats(ys.min, ys.sum / ln, ys.max),
-      SingleVarStats(zs.min, zs.sum / ln, zs.max),
+      DimStats(SingleVarStats(xs.min, xs.sum / ln, xs.max), xs),
+      DimStats(SingleVarStats(ys.min, ys.sum / ln, ys.max), ys),
+      DimStats(SingleVarStats(zs.min, zs.sum / ln, zs.max), zs),
       {
         if(ts.nonEmpty)
           SingleVarStats(ts.minBy(_.interval), IntervalWithTrackingOption(ts.map(_.interval).sum / ln, None), ts.maxBy(_.interval))

@@ -5,7 +5,9 @@ import org.joda.time.DateTime
 
 case class MeasurementCell(time: Long, x: Double, y: Double, z: Double)
 
-case class MeasurementKey(userId: String, startTime: DateTime, activity: String)
+case class MeasurementKey(userId: String, startTime: DateTime, activity: String) {
+  def prettyPrint: String = s"$userId $startTime $activity"
+}
 
 case class Measurement(key: MeasurementKey, cell: MeasurementCell)
 
