@@ -4,11 +4,29 @@ import com.datastax.spark.connector.CassandraRow
 
 case class MeasurementCell(time: String, x: Double, y: Double, z: Double)
 
+case class MeasurementVector(min: Double, mean: Double, max: Double) {
+  def prettyPrint: String = s"$min $mean $max"
+}
+
 case class MeasurementKey(userId: String, startTime: String, activity: String)
 
 case class Measurement(key: MeasurementKey, cell: MeasurementCell)
 
-case class MeasurementGroup(key: MeasurementKey, cells: Seq[MeasurementCell])
+case class GroupStats(length: Int, x: MeasurementVector, y: MeasurementVector, z: MeasurementVector) {
+  def prettyPrint: String =
+    s"length: $length \n   x: ${x.prettyPrint} \n   y: ${y.prettyPrint} \n   z: ${z.prettyPrint}"
+}
+
+case class MeasurementGroup(key: MeasurementKey, cells: Seq[MeasurementCell]) {
+  def stats: (MeasurementKey, GroupStats) = {
+    val ln = cells.length
+    val xs = cells.map(_.x)
+    val ys = cells.map(_.y)
+    val zs = cells.map(_.z)
+    val st = GroupStats(ln, MeasurementVector(xs.min, xs.sum / ln, xs.max), MeasurementVector(ys.min, ys.sum / ln, ys.max), MeasurementVector(zs.min, zs.sum / ln, zs.max))
+    (key, st)
+  }
+}
 
 sealed trait MeasurementType {
   val name: String

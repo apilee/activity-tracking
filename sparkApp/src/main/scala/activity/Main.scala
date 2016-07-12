@@ -15,14 +15,14 @@ object Main {
 
     writer.println(s"${measurementType.name} count: ${measurements.length}")
 
-    val groupped = measurements.groupBy(a => a.key).map {
+    val groups = measurements.groupBy(a => a.key).map {
       case (key, rows) =>
         MeasurementGroup(key, rows.toSeq.map(r => r.cell))
     }.toSeq
 
-    writer.println(s"${measurementType.name} measurements count: ${groupped.length}")
-    groupped.map(_.cells.length).foreach { group =>
-      writer.println(s"${measurementType.name} measurements: $group")
+    writer.println(s"${measurementType.name} measurements count: ${groups.length}")
+    groups.map(_.stats).foreach { group =>
+      writer.println(s"${measurementType.name} measurements: ${group._1} ${group._2.prettyPrint}")
     }
   }
 
