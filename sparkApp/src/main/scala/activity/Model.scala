@@ -6,16 +6,20 @@ import org.joda.time.DateTime
 case class MeasurementCell(time: Long, x: Double, y: Double, z: Double)
 
 case class SingleVarStats[A](min: A, mean: A, max: A) {
-  def prettyPrint: String = s"$min $mean $max"
+  def prettyPrint: String = s"min $min mean $mean max $max"
 }
 
 case class MeasurementKey(userId: String, startTime: DateTime, activity: String)
 
 case class Measurement(key: MeasurementKey, cell: MeasurementCell)
 
-case class GroupStats(length: Int, x: SingleVarStats[Double], y: SingleVarStats[Double], z: SingleVarStats[Double], intervals: SingleVarStats[(DateTime, Long)]) {
+case class GroupStats(length: Int, x: SingleVarStats[Double], y: SingleVarStats[Double], z: SingleVarStats[Double], intervals: SingleVarStats[IntervalWithTrackingOption]) {
   def prettyPrint: String =
     s"length: $length \n   x: ${x.prettyPrint} \n   y: ${y.prettyPrint} \n   z: ${z.prettyPrint} \n   intervals: ${intervals.prettyPrint}"
+}
+
+case class IntervalWithTrackingOption(interval: Long, timeStamp: Option[DateTime]) {
+  override def toString: String = interval.toString + timeStamp.map(ts => s" ($ts)").getOrElse("")
 }
 
 case class MeasurementGroup(key: MeasurementKey, cells: Seq[MeasurementCell]) {
@@ -24,17 +28,18 @@ case class MeasurementGroup(key: MeasurementKey, cells: Seq[MeasurementCell]) {
     val xs = cells.map(_.x)
     val ys = cells.map(_.y)
     val zs = cells.map(_.z)
-    val ts = cells.init.zip(cells.tail).map { case (prev, next) => (new DateTime(prev.time), next.time - prev.time) }
+    val ts = cells.init.zip(cells.tail).map { case (prev, next) => IntervalWithTrackingOption(next.time - prev.time, Some(new DateTime(prev.time))) }
     val st = GroupStats(ln,
       SingleVarStats(xs.min, xs.sum / ln, xs.max),
       SingleVarStats(ys.min, ys.sum / ln, ys.max),
       SingleVarStats(zs.min, zs.sum / ln, zs.max),
       {
-        val anydt = new DateTime(1L)
         if(ts.nonEmpty)
-          SingleVarStats(ts.minBy(_._2), (anydt, ts.map(_._2).sum / ln), ts.maxBy(_._2))
-        else
-          SingleVarStats((anydt, -1L), (anydt, -1L), (anydt, -1L))
+          SingleVarStats(ts.minBy(_.interval), IntervalWithTrackingOption(ts.map(_.interval).sum / ln, None), ts.maxBy(_.interval))
+        else {
+          val anystat = IntervalWithTrackingOption(-1L, None)
+          SingleVarStats(anystat, anystat, anystat)
+        }
       }
     )
     (key, st)
