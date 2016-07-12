@@ -13,6 +13,8 @@ object Main {
     //moving from RDD to Scala Seq, because it's easier to process and we don't have lots of data currently
     val measurements = rawRdd.collect().map(measurementType.apply)
 
+    writer.println("sample: " + measurements.take(15).toList)
+
     writer.println(s"${measurementType.name} count: ${measurements.length}")
 
     val groups = measurements.groupBy(a => a.key).map {
