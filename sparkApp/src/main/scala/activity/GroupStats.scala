@@ -6,8 +6,8 @@ case class IntervalWithTrackingOption(interval: Long, timeStamp: Option[DateTime
   override def toString: String = interval.toString + timeStamp.map(ts => s" ($ts)").getOrElse("")
 }
 
-case class SingleVarStats[A](min: A, mean: A, max: A) {
-  def prettyPrint: String = s"min $min mean $mean max $max"
+case class SingleVarStats[A](min: A, mean: A, max: A, width: A) {
+  def prettyPrint: String = s"min $min mean $mean max $max width $width"
 }
 
 case class DimStats(varStats: SingleVarStats[Double], meanCrossingsCount: Int, meanCrossingsPercent: Double) {
@@ -52,15 +52,15 @@ object GroupStats {
     val zs = cells.map(_.z)
     val ts = cells.init.zip(cells.tail).map { case (prev, next) => IntervalWithTrackingOption(next.time - prev.time, Some(new DateTime(prev.time))) }
     GroupStats(ln,
-      DimStats(SingleVarStats(xs.min, xs.sum / ln, xs.max), xs),
-      DimStats(SingleVarStats(ys.min, ys.sum / ln, ys.max), ys),
-      DimStats(SingleVarStats(zs.min, zs.sum / ln, zs.max), zs),
+      DimStats(SingleVarStats(xs.min, xs.sum / ln, xs.max, xs.max - xs.min), xs),
+      DimStats(SingleVarStats(ys.min, ys.sum / ln, ys.max, ys.max - ys.min), ys),
+      DimStats(SingleVarStats(zs.min, zs.sum / ln, zs.max, zs.max - zs.min), zs),
       {
+        val anystat = IntervalWithTrackingOption(-1L, None)
         if(ts.nonEmpty)
-          SingleVarStats(ts.minBy(_.interval), IntervalWithTrackingOption(ts.map(_.interval).sum / ln, None), ts.maxBy(_.interval))
+          SingleVarStats(ts.minBy(_.interval), IntervalWithTrackingOption(ts.map(_.interval).sum / ln, None), ts.maxBy(_.interval), anystat)
         else {
-          val anystat = IntervalWithTrackingOption(-1L, None)
-          SingleVarStats(anystat, anystat, anystat)
+          SingleVarStats(anystat, anystat, anystat, anystat)
         }
       },
       if(cells.nonEmpty) cells.last.time - cells.head.time else 0L
