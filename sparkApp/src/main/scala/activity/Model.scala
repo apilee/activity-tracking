@@ -13,7 +13,7 @@ case class MeasurementKey(userId: String, startTime: DateTime, activity: String)
 
 case class Measurement(key: MeasurementKey, cell: MeasurementCell)
 
-case class GroupStats(length: Int, x: SingleVarStats[Double], y: SingleVarStats[Double], z: SingleVarStats[Double], intervals: SingleVarStats[Long]) {
+case class GroupStats(length: Int, x: SingleVarStats[Double], y: SingleVarStats[Double], z: SingleVarStats[Double], intervals: SingleVarStats[(DateTime, Long)]) {
   def prettyPrint: String =
     s"length: $length \n   x: ${x.prettyPrint} \n   y: ${y.prettyPrint} \n   z: ${z.prettyPrint} \n   intervals: ${intervals.prettyPrint}"
 }
@@ -24,12 +24,18 @@ case class MeasurementGroup(key: MeasurementKey, cells: Seq[MeasurementCell]) {
     val xs = cells.map(_.x)
     val ys = cells.map(_.y)
     val zs = cells.map(_.z)
-    val ts = cells.init.zip(cells.tail).map { case (prev, next) => next.time - prev.time }
+    val ts = cells.init.zip(cells.tail).map { case (prev, next) => (new DateTime(prev.time), next.time - prev.time) }
     val st = GroupStats(ln,
       SingleVarStats(xs.min, xs.sum / ln, xs.max),
       SingleVarStats(ys.min, ys.sum / ln, ys.max),
       SingleVarStats(zs.min, zs.sum / ln, zs.max),
-      if(ts.nonEmpty) SingleVarStats(ts.min, ts.sum / ln, ts.max) else SingleVarStats(-1, -1, -1)
+      {
+        val anydt = new DateTime(1L)
+        if(ts.nonEmpty)
+          SingleVarStats(ts.minBy(_._2), (anydt, ts.map(_._2).sum / ln), ts.maxBy(_._2))
+        else
+          SingleVarStats((anydt, -1L), (anydt, -1L), (anydt, -1L))
+      }
     )
     (key, st)
   }
