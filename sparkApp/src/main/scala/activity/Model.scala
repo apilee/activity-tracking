@@ -15,7 +15,12 @@ case class Measurement(key: MeasurementKey, cell: MeasurementCell)
 
 case class GroupStats(length: Int, x: SingleVarStats[Double], y: SingleVarStats[Double], z: SingleVarStats[Double], intervals: SingleVarStats[IntervalWithTrackingOption]) {
   def prettyPrint: String =
-    s"length: $length \n   x: ${x.prettyPrint} \n   y: ${y.prettyPrint} \n   z: ${z.prettyPrint} \n   intervals: ${intervals.prettyPrint}"
+    s"""
+       |   length: $length
+       |   x: ${x.prettyPrint}
+       |   y: ${y.prettyPrint}
+       |   z: ${z.prettyPrint}
+       |   intervals: ${intervals.prettyPrint}""".stripMargin
 }
 
 case class IntervalWithTrackingOption(interval: Long, timeStamp: Option[DateTime]) {
