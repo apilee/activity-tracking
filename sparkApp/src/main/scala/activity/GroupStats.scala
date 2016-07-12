@@ -10,10 +10,18 @@ case class SingleVarStats[A](min: A, mean: A, max: A) {
   def prettyPrint: String = s"min $min mean $mean max $max"
 }
 
-case class GroupStats(length: Int, x: SingleVarStats[Double], y: SingleVarStats[Double], z: SingleVarStats[Double], intervals: SingleVarStats[IntervalWithTrackingOption]) {
+case class GroupStats(
+                       length: Int,
+                       x: SingleVarStats[Double],
+                       y: SingleVarStats[Double],
+                       z: SingleVarStats[Double],
+                       intervals: SingleVarStats[IntervalWithTrackingOption],
+                       durationMs: Long
+                     ) {
   def prettyPrint: String =
     s"""
-       |   length: $length
+       |   rowcount: $length
+       |   total duration: $durationMs ms
        |   x: ${x.prettyPrint}
        |   y: ${y.prettyPrint}
        |   z: ${z.prettyPrint}
@@ -38,7 +46,8 @@ object GroupStats {
           val anystat = IntervalWithTrackingOption(-1L, None)
           SingleVarStats(anystat, anystat, anystat)
         }
-      }
+      },
+      if(cells.nonEmpty) cells.last.time - cells.head.time else 0L
     )
   }
 }
