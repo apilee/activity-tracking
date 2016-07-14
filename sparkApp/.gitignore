@@ -90,3 +90,5 @@ buildNumber.properties
 
 # project specific
 **/application.conf
+**/output.txt
+restapi/restapi
