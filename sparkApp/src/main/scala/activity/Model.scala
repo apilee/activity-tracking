@@ -34,7 +34,15 @@ object Orientation  extends MeasurementType {
   def apply(row: CassandraRow): Measurement =
     Measurement(
       MeasurementKey(row.getString("userid"), row.getDateTime("starttime"), row.getString("activity")),
-      MeasurementCell(row.getDateTime("time").getMillis, row.getDouble("pitch"), row.getDouble("roll"), row.getDouble("yaw"))
+      MeasurementCell(row.getDateTime("time").getMillis, row.getDouble("pitch"), row.getDouble("roll"), row.getDouble("azimuth"))
     )
 }
 
+object Gyro extends MeasurementType {
+  val name = "gyro"
+  def apply(row: CassandraRow): Measurement =
+    Measurement(
+      MeasurementKey(row.getString("userid"), row.getDateTime("starttime"), row.getString("activity")),
+      MeasurementCell(row.getDateTime("time").getMillis, row.getDouble("pitch"), row.getDouble("roll"), row.getDouble("yaw"))
+    )
+}

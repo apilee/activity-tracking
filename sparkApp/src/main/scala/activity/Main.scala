@@ -31,6 +31,7 @@ object Main {
     val sc = new SparkContext("local[*]", "spark-activity-tracking", conf)
     preAnalysis(sc, Acceleration)
     preAnalysis(sc, Orientation)
+    preAnalysis(sc, Gyro)
   }
 
   def main(args: Array[String]): Unit = {
