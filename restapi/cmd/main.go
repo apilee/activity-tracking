@@ -118,7 +118,7 @@ func initKeyspace() error {
 
 func initAccelerationTrainingTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingAcceleration (userid text, activity text, starttime timestamp, time timestamp, x double, y double, z double, PRIMARY KEY (userid, starttime, time));`).Exec()
+	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingAcceleration (userid text, activity text, starttime timestamp, time timestamp, x double, y double, z double, PRIMARY KEY ((userid, starttime), time));`).Exec()
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func initAccelerationProductionTable() error {
 
 func initGyroTrainingTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingGyro (userid text, activity text, starttime timestamp, time timestamp, pitch double, roll double, yaw double, PRIMARY KEY (userid, starttime, time));`).Exec()
+	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingGyro (userid text, activity text, starttime timestamp, time timestamp, pitch double, roll double, yaw double, PRIMARY KEY ((userid, starttime), time));`).Exec()
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func initGyroProductionTable() error {
 
 func initOrientationTrainingTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingOrientation (userid text, activity text, starttime timestamp, time timestamp, azimuth double, pitch double, roll double, PRIMARY KEY (userid, starttime, time));`).Exec()
+	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingOrientation (userid text, activity text, starttime timestamp, time timestamp, azimuth double, pitch double, roll double, PRIMARY KEY ((userid, starttime), time));`).Exec()
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func handleAccelOrientProduction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert data into Cassandra.
-	err = session.Query(`INSERT INTO productionAcceleration (userid, timestamp, x, y, z) VALUES (?, ?, ?, ?, ?, ?)`,
+	err = session.Query(`INSERT INTO productionAcceleration (userid, time, x, y, z) VALUES (?, ?, ?, ?, ?)`,
 		myData.UserId,
 		myData.Timestamp,
 		myData.Acceleration.X,
@@ -201,7 +201,7 @@ func handleAccelOrientProduction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = session.Query(`INSERT INTO productionOrientation (userid, timestamp, azimuth, pitch, roll) VALUES (?, ?, ?, ?, ?, ?)`,
+	err = session.Query(`INSERT INTO productionOrientation (userid, time, azimuth, pitch, roll) VALUES (?, ?, ?, ?, ?)`,
 		myData.UserId,
 		myData.Timestamp,
 		myData.Orientation.Azimuth,
@@ -289,7 +289,7 @@ func handleGyroProduction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert data into Cassandra.
-	err = session.Query(`INSERT INTO productionGyro (userid, time, pitch, roll, yaw) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+	err = session.Query(`INSERT INTO productionGyro (userid, time, pitch, roll, yaw) VALUES (?, ?, ?, ?, ?);`,
 		myData.UserId,
 		myData.Timestamp,
 		myData.Gyro.Pitch,
