@@ -157,11 +157,11 @@ func initOrientationProductionTable() error {
 }
 
 func initRotationTrainingTable() error {
-	return session.Query(`CREATE TABLE IF NOT EXISTS trainingRotation (userid text, activity text, starttime timestamp, time timestamp, a0 double, a1 double, a2 double, b0 double, b1 double, b2 double, c0 double, c1 double, c2 double, PRIMARY KEY ((userid, starttime), time));`)
+	return session.Query(`CREATE TABLE IF NOT EXISTS trainingRotation (userid text, activity text, starttime timestamp, time timestamp, a0 double, a1 double, a2 double, b0 double, b1 double, b2 double, c0 double, c1 double, c2 double, PRIMARY KEY ((userid, starttime), time));`).Exec()
 }
 
 func initRotationProductionTable() error {
-	return session.Query(`CREATE TABLE IF NOT EXISTS productionRotation (userid text, time timestamp, a0 double, a1 double, a2 double, b0 double, b1 double, b2 double, c0 double, c1 double, c2 double, PRIMARY KEY (userid,  time));`)
+	return session.Query(`CREATE TABLE IF NOT EXISTS productionRotation (userid text, time timestamp, a0 double, a1 double, a2 double, b0 double, b1 double, b2 double, c0 double, c1 double, c2 double, PRIMARY KEY (userid,  time));`).Exec()
 }
 
 func handleAccelOrientProduction(w http.ResponseWriter, r *http.Request) {
