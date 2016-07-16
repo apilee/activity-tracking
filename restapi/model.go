@@ -24,6 +24,7 @@ type AccelOrientTraining struct {
 	StartTime    int64        `json:"starttime"`
 	Acceleration acceleration `json:"acceleration"`
 	Orientation  orientation  `json:"orientation"`
+	Matrix       []float64    `json:"rotmatrix"`
 }
 
 // Metadata for production acceleration.
@@ -32,6 +33,7 @@ type AccelOrientProduction struct {
 	Timestamp    int64        `json:"timestamp"`
 	Acceleration acceleration `json:"acceleration"`
 	Orientation  orientation  `json:"orientation"`
+	Matrix       []float64    `json:"rotmatrix"`
 }
 
 type GyroTraining struct {
@@ -46,18 +48,4 @@ type GyroProduction struct {
 	UserId    string `json:"userID"`
 	Timestamp int64  `json:"timestamp"`
 	Gyro      gyro   `json:"gyro"`
-}
-
-type RotationTraining struct {
-	UserId    string      `json:"userID"`
-	Timestamp int64       `json:"timestamp"`
-	Activity  string      `json:"activity"`
-	StartTime int64       `json:"starttime"`
-	Matrix    [][]float64 `json:"rotmatrix"`
-}
-
-type RotationProduction struct {
-	UserId    string      `json:"userID"`
-	Timestamp int64       `json:"timestamp"`
-	Matrix    [][]float64 `json:"rotmatrix"`
 }

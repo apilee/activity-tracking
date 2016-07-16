@@ -114,8 +114,6 @@ func main() {
 	m.HandleFunc("/training/accelorient", handleAccelOrientTraining)
 	m.HandleFunc("/production/gyro", handleGyroProduction)
 	m.HandleFunc("/training/gyro", handleGyroTraining)
-	m.HandleFunc("/production/rotation", handleRotationProduction)
-	m.HandleFunc("/training/rotation", handleRotationTraining)
 	m.HandleFunc("/healthcheck", handleHealthcheck)
 	http.ListenAndServe(":3000", m)
 }
@@ -211,6 +209,26 @@ func handleAccelOrientProduction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = session.Query(`INSERT INTO productionRotation (userid, time, a0, a1, a2, b0, b1, b2, c0, c1, c2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+		myData.UserId,
+		myData.Timestamp,
+		myData.Matrix[0],
+		myData.Matrix[1],
+		myData.Matrix[2],
+		myData.Matrix[3],
+		myData.Matrix[4],
+		myData.Matrix[5],
+		myData.Matrix[6],
+		myData.Matrix[7],
+		myData.Matrix[8],
+	).Exec()
+	if err != nil {
+		fmt.Println("Error when inserting:")
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	// Android app expects the Status Created code for responses signaling success.
 	w.WriteHeader(http.StatusCreated)
 }
@@ -263,7 +281,27 @@ func handleAccelOrientTraining(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
+	err = session.Query(`INSERT INTO trainingRotation (userid, activity, starttime, time, a0, a1, a2, b0, b1, b2, c0, c1, c2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+		myData.UserId,
+		myData.Activity,
+		myData.StartTime,
+		myData.Timestamp,
+		myData.Matrix[0],
+		myData.Matrix[1],
+		myData.Matrix[2],
+		myData.Matrix[3],
+		myData.Matrix[4],
+		myData.Matrix[5],
+		myData.Matrix[6],
+		myData.Matrix[7],
+		myData.Matrix[8],
+	).Exec()
+	if err != nil {
+		fmt.Println("Error when inserting:")
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	// Android app expects the Status Created code for responses signaling success.
 	w.WriteHeader(http.StatusCreated)
 }
@@ -327,86 +365,6 @@ func handleGyroTraining(w http.ResponseWriter, r *http.Request) {
 		myData.Gyro.Pitch,
 		myData.Gyro.Roll,
 		myData.Gyro.Yaw,
-	).Exec()
-	if err != nil {
-		fmt.Println("Error when inserting:")
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	// Android app expects the Status Created code for responses signaling success.
-	w.WriteHeader(http.StatusCreated)
-}
-
-func handleRotationProduction(w http.ResponseWriter, r *http.Request) {
-	myData := &restapi.RotationProduction{}
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	err = json.Unmarshal(data, &myData)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Insert data into Cassandra.
-	err = session.Query(`INSERT INTO productionRotation (userid, time, a0, a1, a2, b0, b1, b2, c0, c1, c2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-		myData.UserId,
-		myData.Timestamp,
-		myData[0][0],
-		myData[0][1],
-		myData[0][2],
-		myData[1][0],
-		myData[1][1],
-		myData[1][2],
-		myData[2][0],
-		myData[2][1],
-		myData[2][2],
-	).Exec()
-	if err != nil {
-		fmt.Println("Error when inserting:")
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	// Android app expects the Status Created code for responses signaling success.
-	w.WriteHeader(http.StatusCreated)
-}
-
-func handleRotationTraining(w http.ResponseWriter, r *http.Request) {
-	myData := &restapi.RotationTraining{}
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	err = json.Unmarshal(data, &myData)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Insert data into Cassandra.
-	err = session.Query(`INSERT INTO trainingRotation (userid, activity, starttime, time, a0, a1, a2, b0, b1, b2, c0, c1, c2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-		myData.UserId,
-		myData.Activity,
-		myData.StartTime,
-		myData.Timestamp,
-		myData[0][0],
-		myData[0][1],
-		myData[0][2],
-		myData[1][0],
-		myData[1][1],
-		myData[1][2],
-		myData[2][0],
-		myData[2][1],
-		myData[2][2],
 	).Exec()
 	if err != nil {
 		fmt.Println("Error when inserting:")
