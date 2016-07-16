@@ -96,6 +96,16 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	err = initRotationProductionTable()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = initRotationTrainingTable()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	fmt.Println("Initialization complete.")
 
@@ -104,6 +114,8 @@ func main() {
 	m.HandleFunc("/training/accelorient", handleAccelOrientTraining)
 	m.HandleFunc("/production/gyro", handleGyroProduction)
 	m.HandleFunc("/training/gyro", handleGyroTraining)
+	m.HandleFunc("/production/rotation", handleRotationProduction)
+	m.HandleFunc("/training/rotation", handleRotationTraining)
 	m.HandleFunc("/healthcheck", handleHealthcheck)
 	http.ListenAndServe(":3000", m)
 }
@@ -118,56 +130,40 @@ func initKeyspace() error {
 
 func initAccelerationTrainingTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingAcceleration (userid text, activity text, starttime timestamp, time timestamp, x double, y double, z double, PRIMARY KEY ((userid, starttime), time));`).Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	return session.Query(`CREATE TABLE IF NOT EXISTS trainingAcceleration (userid text, activity text, starttime timestamp, time timestamp, x double, y double, z double, PRIMARY KEY ((userid, starttime), time));`).Exec()
 }
 
 func initAccelerationProductionTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS productionAcceleration (userid text, time timestamp, x double, y double, z double, PRIMARY KEY (userid, time));`).Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	return session.Query(`CREATE TABLE IF NOT EXISTS productionAcceleration (userid text, time timestamp, x double, y double, z double, PRIMARY KEY (userid, time));`).Exec()
 }
 
 func initGyroTrainingTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingGyro (userid text, activity text, starttime timestamp, time timestamp, pitch double, roll double, yaw double, PRIMARY KEY ((userid, starttime), time));`).Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	return session.Query(`CREATE TABLE IF NOT EXISTS trainingGyro (userid text, activity text, starttime timestamp, time timestamp, pitch double, roll double, yaw double, PRIMARY KEY ((userid, starttime), time));`).Exec()
 }
 
 func initGyroProductionTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS productionGyro (userid text, time timestamp, pitch double, roll double, yaw double, PRIMARY KEY (userid, time));`).Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	return session.Query(`CREATE TABLE IF NOT EXISTS productionGyro (userid text, time timestamp, pitch double, roll double, yaw double, PRIMARY KEY (userid, time));`).Exec()
 }
 
 func initOrientationTrainingTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS trainingOrientation (userid text, activity text, starttime timestamp, time timestamp, azimuth double, pitch double, roll double, PRIMARY KEY ((userid, starttime), time));`).Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	return session.Query(`CREATE TABLE IF NOT EXISTS trainingOrientation (userid text, activity text, starttime timestamp, time timestamp, azimuth double, pitch double, roll double, PRIMARY KEY ((userid, starttime), time));`).Exec()
 }
 
 func initOrientationProductionTable() error {
 	// Create the Cassandra table if not there already.
-	err := session.Query(`CREATE TABLE IF NOT EXISTS productionOrientation (userid text, time timestamp, azimuth double, pitch double, roll double, PRIMARY KEY (userid, time));`).Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	return session.Query(`CREATE TABLE IF NOT EXISTS productionOrientation (userid text, time timestamp, azimuth double, pitch double, roll double, PRIMARY KEY (userid, time));`).Exec()
+}
+
+func initRotationTrainingTable() error {
+	return session.Query(`CREATE TABLE IF NOT EXISTS trainingRotation (userid text, activity text, starttime timestamp, time timestamp, a0 double, a1 double, a2 double, b0 double, b1 double, b2 double, c0 double, c1 double, c2 double, PRIMARY KEY ((userid, starttime), time));`)
+}
+
+func initRotationProductionTable() error {
+	return session.Query(`CREATE TABLE IF NOT EXISTS productionRotation (userid text, time timestamp, a0 double, a1 double, a2 double, b0 double, b1 double, b2 double, c0 double, c1 double, c2 double, PRIMARY KEY (userid,  time));`)
 }
 
 func handleAccelOrientProduction(w http.ResponseWriter, r *http.Request) {
@@ -331,6 +327,86 @@ func handleGyroTraining(w http.ResponseWriter, r *http.Request) {
 		myData.Gyro.Pitch,
 		myData.Gyro.Roll,
 		myData.Gyro.Yaw,
+	).Exec()
+	if err != nil {
+		fmt.Println("Error when inserting:")
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// Android app expects the Status Created code for responses signaling success.
+	w.WriteHeader(http.StatusCreated)
+}
+
+func handleRotationProduction(w http.ResponseWriter, r *http.Request) {
+	myData := &restapi.RotationProduction{}
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(data, &myData)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Insert data into Cassandra.
+	err = session.Query(`INSERT INTO productionRotation (userid, time, a0, a1, a2, b0, b1, b2, c0, c1, c2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+		myData.UserId,
+		myData.Timestamp,
+		myData[0][0],
+		myData[0][1],
+		myData[0][2],
+		myData[1][0],
+		myData[1][1],
+		myData[1][2],
+		myData[2][0],
+		myData[2][1],
+		myData[2][2],
+	).Exec()
+	if err != nil {
+		fmt.Println("Error when inserting:")
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// Android app expects the Status Created code for responses signaling success.
+	w.WriteHeader(http.StatusCreated)
+}
+
+func handleRotationTraining(w http.ResponseWriter, r *http.Request) {
+	myData := &restapi.RotationTraining{}
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(data, &myData)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Insert data into Cassandra.
+	err = session.Query(`INSERT INTO trainingRotation (userid, activity, starttime, time, a0, a1, a2, b0, b1, b2, c0, c1, c2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+		myData.UserId,
+		myData.Activity,
+		myData.StartTime,
+		myData.Timestamp,
+		myData[0][0],
+		myData[0][1],
+		myData[0][2],
+		myData[1][0],
+		myData[1][1],
+		myData[1][2],
+		myData[2][0],
+		myData[2][1],
+		myData[2][2],
 	).Exec()
 	if err != nil {
 		fmt.Println("Error when inserting:")

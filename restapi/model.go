@@ -47,3 +47,17 @@ type GyroProduction struct {
 	Timestamp int64  `json:"timestamp"`
 	Gyro      gyro   `json:"gyro"`
 }
+
+type RotationTraining struct {
+	UserId    string      `json:"userID"`
+	Timestamp int64       `json:"timestamp"`
+	Activity  string      `json:"activity"`
+	StartTime int64       `json:"starttime"`
+	Matrix    [][]float64 `json:"rotmatrix"`
+}
+
+type RotationProduction struct {
+	UserId    string      `json:"userID"`
+	Timestamp int64       `json:"timestamp"`
+	Matrix    [][]float64 `json:"rotmatrix"`
+}
